@@ -229,6 +229,7 @@ static const int SOURCE_GALLERY = 1;
 - (void)imagePickerController:(UIImagePickerController *)picker
     didFinishPickingMediaWithInfo:(NSDictionary<NSString *, id> *)info {
   NSURL *videoURL = [info objectForKey:UIImagePickerControllerMediaURL];
+  UIImage *image = [info objectForKey:UIImagePickerControllerEditedImage];
   [_imagePickerController dismissViewControllerAnimated:YES completion:nil];
   // The method dismissViewControllerAnimated does not immediately prevent
   // further didFinishPickingMediaWithInfo invocations. A nil check is necessary
@@ -240,12 +241,11 @@ static const int SOURCE_GALLERY = 1;
   if (videoURL != nil) {
     self.result(videoURL.path);
     self.result = nil;
-  } else {
-    UIImage *image = [info objectForKey:UIImagePickerControllerEditedImage];
+  } else {  
     if (image == nil) {
       image = [info objectForKey:UIImagePickerControllerOriginalImage];
     }
-
+    image = [self normalizedImage:image];
     NSNumber *maxWidth = [_arguments objectForKey:@"maxWidth"];
     NSNumber *maxHeight = [_arguments objectForKey:@"maxHeight"];
 
@@ -273,6 +273,16 @@ static const int SOURCE_GALLERY = 1;
     }
   }
   _arguments = nil;
+}
+
+- (UIImage *)normalizedImage:(UIImage *)image {
+    if (image.imageOrientation == UIImageOrientationUp) return image;
+    
+    UIGraphicsBeginImageContextWithOptions(image.size, NO, image.scale);
+    [image drawInRect:(CGRect){0, 0, image.size}];
+    UIImage *normalizedImage = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    return normalizedImage;
 }
 
 - (void)imagePickerControllerDidCancel:(UIImagePickerController *)picker {
